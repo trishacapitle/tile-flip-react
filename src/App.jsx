@@ -18,23 +18,28 @@ export default function App() {
 
 	useGSAP(
 		() => {
+			// Get all tile elements and the flip button
 			const tiles = Array.from(container.current.querySelectorAll(".tile"));
 			const flipButton = container.current.querySelector("#flipButton");
 
+			// Attach mouseenter event to each tile for flip animation
 			tiles.forEach((tile, index) => {
 				let lastEnter = 0;
 				const onEnter = () => {
 					const now = Date.now();
+					// Prevent rapid re-triggering (cooldown)
 					if (now - lastEnter < COOLDOWN) return;
 					lastEnter = now;
 
+					// Calculate column index and tilt for 3D effect
 					const colId = index % COLS;
 					const tiltMap = { 0: -40, 1: -20, 2: -10, 4: 20, 5: 40 };
 					const tiltY = tiltMap[colId] ?? 10;
 
-					// read the *current* flipped state from the ref
+					// Read the current flipped state from the ref
 					const flipped = isFlippedRef.current;
 
+					// Animate the tile flip with GSAP timeline
 					gsap
 						.timeline()
 						.set(tile, { rotateX: flipped ? 180 : 0, rotateY: 0 })
@@ -56,18 +61,21 @@ export default function App() {
 						);
 				};
 
+				// Add event listener for mouseenter
 				tile.addEventListener("mouseenter", onEnter);
 
-				// cleanup
+				// Cleanup event listener on unmount
 				return () => tile.removeEventListener("mouseenter", onEnter);
 			});
 
+			// Handler for flipping all tiles at once
 			const onFlipAll = () => {
 				const newFlipped = !isFlippedRef.current;
 				setIsFlipped(newFlipped);
-				// also update the ref immediately so any hovers mid‐animation read the new value
+				// Update the ref immediately for correct hover behavior
 				isFlippedRef.current = newFlipped;
 
+				// Animate all tiles flipping with staggered timing
 				gsap.to(tiles, {
 					rotateX: newFlipped ? 180 : 0,
 					duration: 1,
@@ -76,7 +84,9 @@ export default function App() {
 				});
 			};
 
+			// Add event listener for the flip button
 			flipButton?.addEventListener("click", onFlipAll);
+			// Cleanup event listener on unmount
 			return () => flipButton?.removeEventListener("click", onFlipAll);
 		},
 		{ scope: container }
